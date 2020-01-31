@@ -23,7 +23,7 @@ $ composer require ridvanaltun/json-patch-generator
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-use ridvanaltun\JsonPatchCreator\Utils;
+use ridvanaltun\JsonPatchGenerator\Utils;
 
 $utils = new Utils();
 
