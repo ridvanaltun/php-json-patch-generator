@@ -49,8 +49,9 @@ class Utils
                 // this is for get value by path
                 $targetPath = $isSequentialArr ? $fullpath.'/'.$k : $fullpath;
 
-                $isValueAdded = null;
-                $isValueReplaced = null;
+                $isValueAdded = false;
+                $isValueReplaced = false;
+                $notChanged = false;
 
                 // handle sequential array
                 if ($isSequentialArr) {
@@ -62,18 +63,23 @@ class Utils
                     // is value replaced
                     $isValueReplaced = in_array($seqVal, $oldSnap);
                 } else {
+                    $oldVal = $this->getValueByPath($oldSnap, $targetPath);
+                    $currVal = $this->getValueByPath($currSnap, $targetPath);
+
+                    // detect null and not changed values
+                    $notChanged = $oldVal === null && $currVal === null;
+
                     // is value added
                     $isValueAdded = $this->getValueByPath($oldSnap, $targetPath) === null;
 
                     // is value replaced
-                    $oldVal = $this->getValueByPath($oldSnap, $targetPath);
-                    $currVal = $this->getValueByPath($currSnap, $targetPath);
-                    $isValueReplaced = !$isValueAdded && ($oldVal !== $currVal);
+                    $isValueReplaced = !$isValueAdded && ($oldVal !== $currVal) && $currVal !== null;
                 }
 
-                if ($isValueAdded) $patches[] = $this->createPatch('add', $fullpath, $v);
-
-                if ($isValueReplaced) $patches[] = $this->createPatch('replace', $fullpath, $v);
+                if (!$notChanged) {
+                    if ($isValueAdded) $patches[] = $this->createPatch('add', $fullpath, $v);
+                    if ($isValueReplaced) $patches[] = $this->createPatch('replace', $fullpath, $v);
+                }
             }
             else {
                 if ($this->isArraySequential($v)) {
@@ -102,7 +108,8 @@ class Utils
                 // this is for get value by path
                 $targetPath = $isSequentialArr ? $fullpath.'/'.$k : $fullpath;
 
-                $isValueDeleted = null;
+                $isValueDeleted = false;
+                $notChanged = false;
 
                 // handle sequential array
                 if ($isSequentialArr) {
@@ -113,10 +120,18 @@ class Utils
 
                     if ($isValueDeleted) $patches[] = $this->createPatch('remove', $fullpath, $v);
                 } else {
+                    $oldVal = $this->getValueByPath($oldSnap, $targetPath);
+                    $currVal = $this->getValueByPath($currSnap, $targetPath);
+
+                    // detect null and not changed values
+                    $notChanged = $oldVal === null && $currVal === null;
+
                     // is value deleted
                     $isValueDeleted = $this->getValueByPath($currSnap, $targetPath) === null;
 
-                    if ($isValueDeleted) $patches[] = $this->createPatch('remove', $fullpath);
+                    if (!$notChanged) {
+                        if ($isValueDeleted) $patches[] = $this->createPatch('remove', $fullpath);
+                    }
                 }
             }
             else {
@@ -133,8 +148,8 @@ class Utils
         }
         return $patches;
     }
-	
-	public function takeSnapshot($classObject) {
+
+    public function takeSnapshot($classObject) {
         return get_object_vars($classObject);
     }
 
